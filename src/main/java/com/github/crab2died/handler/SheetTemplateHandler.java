@@ -26,10 +26,9 @@
 
 package com.github.crab2died.handler;
 
-import com.github.crab2died.exceptions.Excel4JException;
+import com.github.crab2died.exceptions.Excel4jException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
@@ -41,11 +40,24 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * @author jimmy
+ */
 public class SheetTemplateHandler {
 
-    // 构建SheetTemplate
+    private static final String CHAR_AND = "&";
+
+    private static final int TWO = 2;
+
+    /**
+     * 构建SheetTemplate
+     *
+     * @param templatePath 模板路径
+     * @return 模板对象
+     * @throws Excel4jException 异常
+     */
     public static SheetTemplate sheetTemplateBuilder(String templatePath)
-            throws Excel4JException {
+            throws Excel4jException {
         SheetTemplate sheetTemplate = new SheetTemplate();
         try {
             // 读取模板文件
@@ -57,21 +69,21 @@ public class SheetTemplateHandler {
                         SheetTemplateHandler.class.getResourceAsStream(templatePath)
                 );
             } catch (IOException | InvalidFormatException e1) {
-                throw new Excel4JException(e1);
+                throw new Excel4jException(e1);
             }
         }
         return sheetTemplate;
     }
 
     public static SheetTemplate sheetTemplateBuilder(InputStream is)
-            throws Excel4JException {
+            throws Excel4jException {
         SheetTemplate sheetTemplate = new SheetTemplate();
 
         // 读取模板文件
         try {
             sheetTemplate.workbook = WorkbookFactory.create(is);
         } catch (IOException | InvalidFormatException e) {
-            throw new Excel4JException(e);
+            throw new Excel4jException(e);
         }
         return sheetTemplate;
     }
@@ -98,7 +110,7 @@ public class SheetTemplateHandler {
 
         for (Row row : template.sheet) {
             for (Cell c : row) {
-                if (c.getCellTypeEnum() != CellType.STRING) {
+                if (c.getCellType() != Cell.CELL_TYPE_STRING) {
                     continue;
                 }
                 String str = c.getStringCellValue().trim().toLowerCase();
@@ -125,14 +137,14 @@ public class SheetTemplateHandler {
         if (null == moduleContext || "".equals(moduleContext)) {
             return;
         }
-        if (!moduleContext.startsWith("&")) {
+        if (!moduleContext.startsWith(CHAR_AND)) {
             moduleContext = moduleContext.toLowerCase();
         }
         if (HandlerConstant.DEFAULT_STYLE.equals(moduleContext)) {
             template.defaultStyle = cell.getCellStyle();
             clearCell(cell);
         }
-        if (moduleContext.startsWith("&") && moduleContext.length() > 1) {
+        if (moduleContext.startsWith(CHAR_AND) && moduleContext.length() > 1) {
             template.classifyStyle.put(moduleContext.substring(1), cell.getCellStyle());
             clearCell(cell);
         }
@@ -156,13 +168,14 @@ public class SheetTemplateHandler {
     }
 
     /*-----------------------------------初始化模板结束-----------------------------------*/
-    
+
     /*-----------------------------------数据填充开始------------------------------------*/
 
     /**
      * 根据map替换相应的常量，通过Map中的值来替换#开头的值
      *
-     * @param data 替换映射
+     * @param template 模板
+     * @param data     替换映射
      */
     public static void extendData(SheetTemplate template, Map<String, String> data) {
         if (data == null) {
@@ -170,7 +183,7 @@ public class SheetTemplateHandler {
         }
         for (Row row : template.sheet) {
             for (Cell c : row) {
-                if (c.getCellTypeEnum() != CellType.STRING) {
+                if (c.getCellType() != Cell.CELL_TYPE_STRING) {
                     continue;
                 }
                 String str = c.getStringCellValue().trim();
@@ -183,6 +196,8 @@ public class SheetTemplateHandler {
 
     /**
      * 创建新行，在使用时只要添加完一行，需要调用该方法创建
+     *
+     * @param template 模板
      */
     public static void createNewRow(SheetTemplate template) {
         if (template.lastRowIndex > template.currentRowIndex && template.currentRowIndex != template.initRowIndex) {
@@ -198,6 +213,7 @@ public class SheetTemplateHandler {
     /**
      * 插入序号，会自动找相应的序号标示的位置完成插入
      *
+     * @param template 模板
      * @param styleKey 样式标识
      */
     public static void insertSerial(SheetTemplate template, String styleKey) {
@@ -213,6 +229,7 @@ public class SheetTemplateHandler {
     /**
      * <p>设置Excel元素样式及内容</p>
      *
+     * @param template 模板
      * @param value    内容
      * @param styleKey 样式
      */
@@ -294,11 +311,11 @@ public class SheetTemplateHandler {
             cell.setCellStyle(template.appointLineStyle.get(cell.getRowIndex()));
             return;
         }
-        if (null != template.singleLineStyle && (cell.getRowIndex() % 2 != 0)) {
+        if (null != template.singleLineStyle && (cell.getRowIndex() % TWO != 0)) {
             cell.setCellStyle(template.singleLineStyle);
             return;
         }
-        if (null != template.doubleLineStyle && (cell.getRowIndex() % 2 == 0)) {
+        if (null != template.doubleLineStyle && (cell.getRowIndex() % TWO == 0)) {
             cell.setCellStyle(template.doubleLineStyle);
             return;
         }
